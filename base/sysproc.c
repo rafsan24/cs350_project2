@@ -112,3 +112,23 @@ int sys_enable_sched_trace(void)
 
   return 0;
 }
+
+int sys_set_sched(void){
+  int n;
+  if(argint(0, &n) < 0)
+    cprintf("sys_set_sched() failed!\n");
+  if(n)
+    policy = 1;
+  return 0;
+}
+
+int sys_tickets_owned(void){
+  return myproc()->tickets;
+}
+
+int sys_transfer_tickets(void){
+  int pid, tickets;
+  argint(0, &pid);
+  argint(1, &tickets);
+  return transfer_tickets(pid, tickets, myproc());
+}

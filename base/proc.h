@@ -12,6 +12,8 @@ struct cpu {
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
+extern int policy;
+//extern int transfer_tickets(int pid, int tickets, struct proc* proc);
 
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
@@ -49,6 +51,9 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int tickets;                 // num of tickets
+  int strides;                 // stride value
+  int pass;                    // pass value
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -13,6 +13,7 @@ struct {
 } ptable;
 
 static struct proc *initproc;
+int policy = 0; //stride scheduling = 1
 
 int fork_policy = 0; //temp change
 int nextpid = 1;
@@ -564,4 +565,25 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int transfer_tickets(int pid, int tickets, struct proc *c){
+  if(tickets<0)
+    return -1;
+  if(tickets > (c->tickets - 1))
+    return -2;
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      p->tickets += tickets;
+      c->tickets -= tickets;
+      p->strides = 100/p->tickets;
+      c->strides = 100/c->tickets;
+      release(&ptable.lock);
+      return c->tickets;
+    }
+  }
+  release(&ptable.lock);
+  return -3;
 }
