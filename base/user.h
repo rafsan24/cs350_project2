@@ -24,8 +24,9 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 void fork_winner(int winner); //add
-
+void set_sched(int);
 int tickets_owned(int);
+
 
 
 // ulib.c

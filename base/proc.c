@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include <limits.h>
 
 struct {
   struct spinlock lock;
@@ -370,6 +371,48 @@ scheduler(void)
 
     if (ran == 0){
         halt();
+    }
+  }
+  // stride
+  for (;;) {
+    sti();
+    acquire(&ptable.lock);
+    ran = 0;
+
+    for (;;) {
+      ran = 0;
+      int lowestPass = 2147483647; // max int value
+      struct proc *selectedProc;
+
+      for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == RUNNABLE) {
+          if (p->pass < lowestPass) {
+            lowestPass = p->pass;
+            selectedProc = p;
+            ran = 1;
+          }
+        }
+      }
+
+      if (ran == 0) {
+        break;
+      }
+
+      selectedProc->pass += selectedProc->strides;
+
+      c->proc = selectedProc;
+      switchuvm(selectedProc);
+      selectedProc->state = RUNNING;
+
+      swtch(&(c->scheduler), selectedProc->context);
+      switchkvm();
+
+      c->proc = 0;
+
+      release(&ptable.lock);
+      if (ran == 0) {
+        halt();
+      }
     }
   }
 }
