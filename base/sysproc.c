@@ -115,10 +115,15 @@ int sys_enable_sched_trace(void)
 
 int sys_set_sched(void){
   int n;
-  if(argint(0, &n) < 0)
+  if(argint(0, &n) < 0){
     cprintf("sys_set_sched() failed!\n");
+    return -1;
+  }
   if(n)
     policy = 1;
+  else{
+    policy = 0;
+  }
   return 0;
 }
 

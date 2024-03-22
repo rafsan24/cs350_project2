@@ -45,5 +45,4 @@ int atoi(const char*);
 void shutdown(void);
 void enable_sched_trace(int enable);
 
-void set_sched(int);
 int transfer_tickets(int pid, int tickets);

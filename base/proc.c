@@ -187,6 +187,7 @@ fork(void)
 {
   int i, pid;
   struct proc *np;
+  struct proc *p;
   struct proc *curproc = myproc();
 
   // Allocate process.
@@ -219,6 +220,21 @@ fork(void)
 
   acquire(&ptable.lock);
   np->state = RUNNABLE;
+  //stride scheduler
+  int total = 0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  	if(p->state == RUNNING || p->state ==RUNNABLE){
+  		total+= 1;
+  	}
+  	for(p = ptable.proc; p<&ptable.proc[NPROC];p++){
+  		if(p->state == RUNNING || p->state == RUNNABLE){
+  			p->tickets = 100/total;
+  			p->strides = 1000/total;
+  			p->pass = 0;
+  		}
+  	}
+  }
+  
   release(&ptable.lock);
   if(fork_policy == 1) 
   {
@@ -275,6 +291,22 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  //stride scheduler
+  int total = 0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  	if(p->state == RUNNING || p->state == RUNNABLE){
+  		total += 1;
+  	}
+  	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  		if(p->state == RUNNING || p->state == RUNNABLE){
+  			p->tickets = 100/total;
+  			p->strides = 1000/total;
+  			p->pass = 0;
+  		}
+  	}
+  }
+
+  
   sched();
   panic("zombie exit");
 }
@@ -610,6 +642,8 @@ procdump(void)
   }
 }
 
+
+
 int transfer_tickets(int pid, int tickets, struct proc *c){
   if(tickets<0)
     return -1;
@@ -618,13 +652,15 @@ int transfer_tickets(int pid, int tickets, struct proc *c){
   struct proc *p;
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
-      p->tickets += tickets;
-      c->tickets -= tickets;
-      p->strides = 100/p->tickets;
-      c->strides = 100/c->tickets;
-      release(&ptable.lock);
-      return c->tickets;
+    if(p->state == RUNNING || p->state == RUNNABLE){
+      if(p->pid == pid){
+	p->tickets += tickets;
+	c->tickets -= tickets;
+	p->strides = 1000/p->tickets;
+	c->strides = 1000/c->tickets;
+	release(&ptable.lock);
+	return c->tickets;
+      }
     }
   }
   release(&ptable.lock);
